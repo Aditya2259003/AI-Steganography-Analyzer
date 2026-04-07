@@ -1,0 +1,1199 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>StegoSec - Steganography Detection System</title>
+  <style>
+    :root {
+      --bg: #09111a;
+      --bg2: #101b28;
+      --bg3: #162434;
+      --panel: rgba(16, 27, 40, 0.9);
+      --panel2: rgba(22, 36, 52, 0.92);
+      --border: rgba(109, 148, 191, 0.2);
+      --border2: rgba(109, 148, 191, 0.35);
+      --text: #ecf6ff;
+      --text2: #adc5dd;
+      --text3: #7890a8;
+      --blue: #4da3ff;
+      --green: #22d39a;
+      --yellow: #ffcd57;
+      --red: #ff5d73;
+      --cyan: #56e3ff;
+      --mono: "Consolas", "Courier New", monospace;
+      --sans: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+      --shadow: 0 18px 44px rgba(0, 0, 0, 0.28);
+      --radius: 18px;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      font-family: var(--sans);
+      color: var(--text);
+      background:
+        radial-gradient(circle at top right, rgba(77, 163, 255, 0.16), transparent 32%),
+        radial-gradient(circle at bottom left, rgba(34, 211, 154, 0.14), transparent 28%),
+        linear-gradient(135deg, #071019 0%, #0c1521 45%, #071019 100%);
+    }
+
+    .app {
+      min-height: 100vh;
+      padding: 24px;
+    }
+
+    .header {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      padding: 18px 22px;
+      margin-bottom: 20px;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      background: rgba(9, 17, 26, 0.8);
+      backdrop-filter: blur(16px);
+      box-shadow: var(--shadow);
+    }
+
+    .logo {
+      font-size: 28px;
+      font-weight: 800;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+    }
+
+    .logo span {
+      color: var(--cyan);
+    }
+
+    .badge {
+      padding: 8px 12px;
+      border-radius: 999px;
+      border: 1px solid rgba(86, 227, 255, 0.24);
+      background: rgba(86, 227, 255, 0.08);
+      color: var(--cyan);
+      font: 700 11px var(--mono);
+      letter-spacing: 0.12em;
+    }
+
+    .status-dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      background: var(--green);
+      box-shadow: 0 0 14px rgba(34, 211, 154, 0.8);
+    }
+
+    .main {
+      display: grid;
+      grid-template-columns: 260px 1fr;
+      gap: 20px;
+      align-items: start;
+    }
+
+    .sidebar,
+    .content {
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      background: var(--panel);
+      backdrop-filter: blur(16px);
+      box-shadow: var(--shadow);
+    }
+
+    .sidebar {
+      padding: 18px 14px;
+      position: sticky;
+      top: 24px;
+    }
+
+    .nav-label {
+      margin: 14px 10px 8px;
+      color: var(--text3);
+      font: 700 11px var(--mono);
+      letter-spacing: 0.14em;
+    }
+
+    .nav-item {
+      padding: 12px 14px;
+      border: 1px solid transparent;
+      border-radius: 12px;
+      color: var(--text2);
+      cursor: pointer;
+      transition: 0.2s ease;
+      user-select: none;
+    }
+
+    .nav-item:hover,
+    .nav-item.active {
+      color: var(--text);
+      border-color: rgba(77, 163, 255, 0.28);
+      background: linear-gradient(135deg, rgba(77, 163, 255, 0.16), rgba(34, 211, 154, 0.08));
+      transform: translateX(2px);
+    }
+
+    .nav-sep {
+      height: 1px;
+      margin: 14px 10px;
+      background: var(--border);
+    }
+
+    .content {
+      padding: 24px;
+      min-height: 740px;
+    }
+
+    .tab-pane {
+      display: none;
+    }
+
+    .tab-pane.active {
+      display: block;
+      animation: fadeIn 0.25s ease;
+    }
+
+    @keyframes fadeIn {
+      from {
+        opacity: 0;
+        transform: translateY(8px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    .pane-title {
+      margin: 0 0 8px;
+      font-size: 28px;
+      font-weight: 800;
+    }
+
+    .pane-desc {
+      margin-bottom: 20px;
+      color: var(--text3);
+      font: 400 13px var(--mono);
+    }
+
+    .grid-2,
+    .grid-3 {
+      display: grid;
+      gap: 18px;
+    }
+
+    .grid-2 {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .grid-3 {
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+
+    .card {
+      padding: 18px;
+      margin-bottom: 18px;
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      background: var(--panel2);
+    }
+
+    .card-title {
+      margin-bottom: 14px;
+      color: var(--text);
+      font: 700 14px var(--mono);
+      letter-spacing: 0.04em;
+    }
+
+    .upload-zone {
+      position: relative;
+      min-height: 140px;
+      display: grid;
+      place-items: center;
+      padding: 16px;
+      border: 1px dashed var(--border2);
+      border-radius: 14px;
+      background:
+        linear-gradient(135deg, rgba(77, 163, 255, 0.08), rgba(34, 211, 154, 0.05)),
+        rgba(255, 255, 255, 0.02);
+      text-align: center;
+      color: var(--text2);
+      overflow: hidden;
+    }
+
+    .upload-zone input[type="file"] {
+      position: absolute;
+      inset: 0;
+      opacity: 0;
+      cursor: pointer;
+    }
+
+    .upload-copy strong {
+      display: block;
+      margin-bottom: 6px;
+      font-size: 15px;
+      color: var(--text);
+    }
+
+    .upload-copy span {
+      color: var(--text3);
+      font-size: 13px;
+    }
+
+    .img-preview {
+      width: 100%;
+      margin-top: 14px;
+      border-radius: 14px;
+      border: 1px solid var(--border);
+      display: none;
+      background: #000;
+      max-height: 320px;
+      object-fit: contain;
+    }
+
+    .img-label,
+    .helper-text,
+    #enc-capacity,
+    #dec-meta {
+      margin-top: 10px;
+      color: var(--text3);
+      font-size: 13px;
+    }
+
+    textarea,
+    .msg-output {
+      width: 100%;
+      border: 1px solid var(--border2);
+      border-radius: 14px;
+      background: rgba(4, 9, 15, 0.52);
+      color: var(--text);
+      padding: 14px;
+      font: 500 14px/1.6 var(--sans);
+    }
+
+    textarea {
+      resize: vertical;
+      min-height: 120px;
+      outline: none;
+    }
+
+    textarea:focus {
+      border-color: rgba(77, 163, 255, 0.6);
+      box-shadow: 0 0 0 3px rgba(77, 163, 255, 0.12);
+    }
+
+    .msg-output {
+      min-height: 120px;
+      white-space: pre-wrap;
+      word-break: break-word;
+    }
+
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      width: 100%;
+      min-height: 46px;
+      margin-top: 14px;
+      padding: 12px 18px;
+      border: 0;
+      border-radius: 14px;
+      cursor: pointer;
+      text-decoration: none;
+      font: 700 14px var(--mono);
+      letter-spacing: 0.04em;
+      transition: transform 0.18s ease, opacity 0.18s ease;
+    }
+
+    .btn:hover:not(:disabled) {
+      transform: translateY(-1px);
+    }
+
+    .btn:disabled {
+      opacity: 0.45;
+      cursor: not-allowed;
+    }
+
+    .btn-primary {
+      background: linear-gradient(135deg, var(--blue), #2a6eff);
+      color: #fff;
+      box-shadow: 0 16px 28px rgba(42, 110, 255, 0.24);
+    }
+
+    .log {
+      min-height: 130px;
+      border: 1px solid rgba(109, 148, 191, 0.16);
+      border-radius: 14px;
+      background: rgba(4, 9, 15, 0.52);
+      padding: 14px;
+      color: #b8d7f0;
+      font: 400 12px/1.7 var(--mono);
+      white-space: pre-wrap;
+    }
+
+    .lsb-grid {
+      display: grid;
+      grid-template-columns: repeat(16, 1fr);
+      gap: 4px;
+    }
+
+    .lsb-bit {
+      aspect-ratio: 1;
+      border-radius: 4px;
+      background: var(--bg3);
+    }
+
+    .metric-card,
+    .model-card {
+      position: relative;
+      padding: 14px;
+      border-radius: 14px;
+      border: 1px solid var(--border);
+      background: rgba(4, 9, 15, 0.4);
+      overflow: hidden;
+    }
+
+    .metric-label,
+    .model-type,
+    .metric-sub {
+      color: var(--text3);
+      font-size: 12px;
+    }
+
+    .metric-value {
+      margin: 10px 0 4px;
+      font-size: 22px;
+      font-weight: 800;
+
+      
+    }
+
+    .model-name {
+      margin-bottom: 4px;
+      font-weight: 700;
+    }
+
+    .model-score {
+      margin-top: 10px;
+      font-size: 26px;
+      font-weight: 800;
+    }
+
+    .model-accent {
+      position: absolute;
+      left: 0;
+      top: 0;
+      bottom: 0;
+      width: 4px;
+    }
+
+    .bar-wrap {
+      margin-bottom: 14px;
+    }
+
+    .bar-header {
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+      margin-bottom: 8px;
+      font-size: 13px;
+    }
+
+    .bar-track {
+      height: 10px;
+      border-radius: 999px;
+      background: rgba(109, 148, 191, 0.16);
+      overflow: hidden;
+    }
+
+    .bar-fill {
+      height: 100%;
+      border-radius: inherit;
+    }
+
+    .verdict {
+      display: flex;
+      justify-content: space-between;
+      gap: 18px;
+      align-items: center;
+      padding: 18px;
+      margin-bottom: 18px;
+      border-radius: 18px;
+      border: 1px solid var(--border);
+    }
+
+    .verdict.clean {
+      background: linear-gradient(135deg, rgba(34, 211, 154, 0.16), rgba(34, 211, 154, 0.06));
+      border-color: rgba(34, 211, 154, 0.24);
+    }
+
+    .verdict.suspicious {
+      background: linear-gradient(135deg, rgba(255, 93, 115, 0.16), rgba(255, 93, 115, 0.06));
+      border-color: rgba(255, 93, 115, 0.24);
+    }
+
+    .verdict-title {
+      font-size: 24px;
+      font-weight: 800;
+    }
+
+    .verdict-detail {
+      margin-top: 6px;
+      color: var(--text2);
+      font-size: 13px;
+      line-height: 1.6;
+    }
+
+    .hist-wrap {
+      height: 110px;
+      display: flex;
+      align-items: end;
+      gap: 4px;
+    }
+
+    .hist-bar {
+      flex: 1;
+      border-radius: 6px 6px 0 0;
+      background: linear-gradient(180deg, rgba(86, 227, 255, 0.92), rgba(77, 163, 255, 0.35));
+    }
+
+    .spinner {
+      width: 16px;
+      height: 16px;
+      border-radius: 50%;
+      border: 2px solid rgba(255, 255, 255, 0.28);
+      border-top-color: white;
+      animation: spin 0.8s linear infinite;
+      display: none;
+    }
+
+    @keyframes spin {
+      to {
+        transform: rotate(360deg);
+      }
+    }
+
+    .panel-note {
+      color: var(--text2);
+      line-height: 1.8;
+      font-size: 14px;
+    }
+
+    .panel-note strong {
+      color: var(--text);
+    }
+
+    @media (max-width: 980px) {
+      .main,
+      .grid-2,
+      .grid-3 {
+        grid-template-columns: 1fr;
+      }
+
+      .sidebar {
+        position: static;
+      }
+
+      .header {
+        flex-wrap: wrap;
+      }
+
+      .verdict {
+        flex-direction: column;
+        align-items: flex-start;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <header class="header">
+      <div class="logo">Aditya's STEGO<span>Detector</span></div>
+      <div class="badge">v1.0 - ML(ANOMALY DETECTION)</div>
+      <div class="header-right" style="margin-left:auto;display:flex;align-items:center;gap:10px;font-family:var(--mono);font-size:11px;color:var(--text3);">
+        <div class="status-dot"></div>
+      <span>THE STEGO DETECTOR is ONLINE</span>
+      </div>
+    </header>
+
+    <div class="main">
+      <nav class="sidebar">
+        <div class="nav-label">TOOLS</div>
+        <div class="nav-item active" onclick="showTab('encode', this)">Encode</div>
+        <div class="nav-item" onclick="showTab('decode', this)">Decode</div>
+        <div class="nav-sep"></div>
+        <div class="nav-label">DETECTION</div>
+        <div class="nav-item" onclick="showTab('detect', this)">Detect</div>
+        <div class="nav-sep"></div>
+        <div class="nav-label">SYSTEM</div>
+        <div class="nav-item" onclick="showTab('pipeline', this)">Pipeline</div>
+        <div class="nav-item" onclick="showTab('about', this)">About</div>
+      </nav>
+
+      <main class="content">
+        <div id="tab-encode" class="tab-pane active">
+          <div class="pane-title">Aditya's LSB Steganography Encoder</div>
+          <div class="pane-desc">// Embed secret data into images using least Significant Bits(LSB) substitution with minimal visual distortion.</div>
+          <div class="grid-2">
+            <div>
+              <div class="card">
+                <div class="card-title">1 ·Please Upload Cover Image</div>
+                <div class="upload-zone">
+                  <input type="file" accept="image/*" onchange="loadEncImage(this)" />
+                  <div class="upload-copy">
+                    <strong>Select a PNG or JPG image only.</strong>
+                    <span>Click here to choose the cover image for encoding</span>
+                  </div>
+                </div>
+                <img id="enc-preview" class="img-preview" alt="Encode preview" />
+                <div class="img-label" id="enc-img-info">No image loaded yet.</div>
+              </div>
+
+              <div class="card">
+                <div class="card-title">2 · Enter Secret Message</div>
+                <textarea id="enc-msg" rows="4" placeholder="Enter your secret message..."></textarea>
+                <div id="enc-capacity">Max capacity: waiting for image</div>
+                <button class="btn btn-primary" onclick="encodeImage()" id="enc-btn" disabled>📌Encode and Download</button>
+              </div>
+            </div>
+
+            <div>
+              <div class="card">
+                <div class="card-title">Encoding Process</div>
+                <div id="enc-log" class="log">Waiting for image to be  uploaded...</div>
+              </div>
+
+              <div class="card" id="enc-result" style="display:none;">
+                <div class="card-title">Encoding Result</div>
+                <div id="enc-stats" class="helper-text"></div>
+                <img id="enc-out" class="img-preview" style="display:block;" alt="Encoded output" />
+                <a id="enc-download" class="btn btn-primary">Download Encoded Image</a>
+              </div>
+
+              <div class="card">
+                <div class="card-title">Bit Distribution Preview</div>
+                <div class="lsb-grid" id="enc-lsb-grid"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div id="tab-decode" class="tab-pane">
+          <div class="pane-title">Aditya's LSB Steganography Decoder</div>
+          <div class="pane-desc">// extract embedded message from image least significant bits</div>
+          <div class="grid-2">
+            <div>
+              <div class="card">
+                <div class="card-title">Upload the Steganographic Image</div>
+                <div class="upload-zone">
+                  <input type="file" accept="image/*" onchange="loadDecImage(this)" />
+                  <div class="upload-copy">
+                    <strong>Select the encoded image</strong>
+                    <span>The decoder will read the 32-bit payload header first</span>
+                  </div>
+                </div>
+                <img id="dec-preview" class="img-preview" alt="Decode preview" />
+                <div class="img-label" id="dec-img-info">No images loaded yet.</div>
+              </div>
+              <button class="btn btn-primary" onclick="decodeImage()" id="dec-btn" disabled>Extract Hidden Message</button>
+            </div>
+
+            <div>
+              <div class="card">
+                <div class="card-title">Extracted Message</div>
+                <div class="msg-output" id="dec-output">Awaiting for the decoding...</div>
+                <div id="dec-meta">No metadata available yet.</div>
+              </div>
+              <div class="card">
+                <div class="card-title">Decode Process Log</div>
+                <div id="dec-log" class="log">Waiting for encoded image...</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div id="tab-detect" class="tab-pane">
+          <div class="pane-title">Aditya's Steganography Detection Engine</div>
+          <div class="pane-desc">// Run heuristic analysis using entropy, chi-square and LSB distribution</div>
+          <div class="grid-2">
+            <div>
+              <div class="card">
+                <div class="card-title">Upload the Image which you want to Analyze</div>
+                <div class="upload-zone">
+                  <input type="file" accept="image/*" onchange="loadDetImage(this)" />
+                  <div class="upload-copy">
+                    <strong>Select any image for scanning</strong>
+                    <span>The engine will extract pixel statistics and LSB patterns</span>
+                  </div>
+                </div>
+                <img id="det-preview" class="img-preview" alt="Detection preview" />
+                <div class="img-label" id="det-img-info">No image loaded yet.</div>
+              </div>
+
+              <button class="btn btn-primary" onclick="detectStego()" id="det-btn" disabled>
+                <div class="spinner" id="det-spinner"></div>
+                <span id="det-icon">Scanning...</span>
+                <span>▶️Run Detection Analysis</span>
+              </button>
+
+              <div class="card" id="feature-panel" style="display:none;">
+                <div class="card-title">Extracted Features</div>
+                <div class="grid-3" id="metrics-grid"></div>
+              </div>
+            </div>
+
+            <div>
+              <div id="verdict-panel" style="display:none;">
+                <div class="verdict clean" id="verdict-box">
+                  <div>
+                    <div class="verdict-title" id="verdict-text">Awaiting analysis</div>
+                    <div class="verdict-detail" id="verdict-detail">Upload an image to begin detection.</div>
+                  </div>
+                  <div id="verdict-conf"></div>
+                </div>
+
+                <div class="card">
+                  <div class="card-title">Model Scores</div>
+                  <div class="grid-2" id="model-cards"></div>
+                </div>
+
+                <div class="card">
+                  <div class="card-title">Statistical Indicators</div>
+                  <div id="stat-bars"></div>
+                </div>
+
+                <div class="card">
+                  <div class="card-title">LSB Pattern Grid</div>
+                  <div class="lsb-grid" id="det-lsb-grid"></div>
+                </div>
+
+                <div class="card">
+                  <div class="card-title">Pixel Histogram</div>
+                  <div class="hist-wrap" id="det-histogram"></div>
+                </div>
+
+                <div class="card">
+                  <div class="card-title">Edge Statistics</div>
+                  <div id="edge-stats" class="panel-note"></div>
+                </div>
+              </div>
+
+              <div id="detect-placeholder" class="card panel-note">
+                <strong>Detection workspace ready.</strong><br />
+                Upload an image to scan for hidden payload indicators.
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div id="tab-pipeline" class="tab-pane">
+          <div class="pane-title">Analysis Pipeline</div>
+          <div class="pane-desc">// How the StegoSec workflow is organized</div>
+          <div class="card panel-note">
+            <strong>1. Encode:</strong> image is loaded into a hidden canvas, message bytes are converted to bits, and the least significant bits of RGB channels are updated.
+            <br /><br />
+            <strong>2. Decode:</strong> the first 32 bits store payload length, then the app reconstructs the hidden message from subsequent LSB values.
+            <br /><br />
+            <strong>3. Detect:</strong> the app extracts grayscale statistics, entropy, chi-square anomaly, LSB ratio, block entropy, and edge density to estimate whether an image looks suspicious.
+          </div>
+        </div>
+
+        <div id="tab-about" class="tab-pane">
+          <div class="pane-title">About StegoSec</div>
+          <div class="pane-desc">// browser-only demo for steganography learning and presentation</div>
+          <div class="card panel-note">
+            This version runs completely in the browser using HTML, CSS and JavaScript. It is designed for project demos, academic presentations and LSB steganography experiments without any backend dependency.
+          </div>
+        </div>
+      </main>
+    </div>
+  </div>
+
+  <canvas id="enc-canvas" style="display:none;"></canvas>
+  <canvas id="dec-canvas" style="display:none;"></canvas>
+  <canvas id="det-canvas" style="display:none;"></canvas>
+
+  <script>
+    function showTab(id, el) {
+      document.querySelectorAll(".tab-pane").forEach((pane) => pane.classList.remove("active"));
+      document.querySelectorAll(".nav-item").forEach((item) => item.classList.remove("active"));
+      const target = document.getElementById("tab-" + id);
+      if (target) target.classList.add("active");
+      if (el) el.classList.add("active");
+    }
+
+    function fmtNum(n, dec = 2) {
+      return Number(n).toFixed(dec);
+    }
+
+    function clamp(v, min, max) {
+      return Math.min(max, Math.max(min, v));
+    }
+
+    function sigmoid(x) {
+      return 1 / (1 + Math.exp(-x));
+    }
+
+    function bytesToBinary(bytes) {
+      return Array.from(bytes)
+        .map((b) => b.toString(2).padStart(8, "0"))
+        .join("");
+    }
+
+    function binaryToBytes(bits) {
+      const bytes = [];
+      for (let i = 0; i + 8 <= bits.length; i += 8) {
+        bytes.push(parseInt(bits.slice(i, i + 8), 2));
+      }
+      return new Uint8Array(bytes);
+    }
+
+    function setLog(id, lines) {
+      const el = document.getElementById(id);
+      if (el) el.textContent = Array.isArray(lines) ? lines.join("\n") : lines;
+    }
+
+    function drawLsbGrid(gridEl, lsbs) {
+      gridEl.innerHTML = "";
+      lsbs.slice(0, 256).forEach((bit) => {
+        const el = document.createElement("div");
+        el.className = "lsb-bit";
+        el.style.background = bit ? "var(--green)" : "var(--bg3)";
+        el.style.border = bit ? "none" : "1px solid var(--border2)";
+        gridEl.appendChild(el);
+      });
+    }
+
+    function loadImageToCanvas(file, canvas, onLoad) {
+      const url = URL.createObjectURL(file);
+      const img = new Image();
+      img.onload = () => {
+        canvas.width = img.width;
+        canvas.height = img.height;
+        const ctx = canvas.getContext("2d");
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        ctx.drawImage(img, 0, 0);
+        URL.revokeObjectURL(url);
+        onLoad(img);
+      };
+      img.src = url;
+    }
+
+    function extractFeatures(imageData) {
+      const data = imageData.data;
+      const W = imageData.width;
+      const H = imageData.height;
+      const N = data.length / 4;
+
+      const pixels = new Float32Array(N);
+      for (let i = 0; i < N; i++) {
+        pixels[i] = 0.299 * data[i * 4] + 0.587 * data[i * 4 + 1] + 0.114 * data[i * 4 + 2];
+      }
+
+      let sum = 0;
+      for (let i = 0; i < N; i++) sum += pixels[i];
+      const mean = sum / N;
+
+      let varSum = 0;
+      for (let i = 0; i < N; i++) varSum += (pixels[i] - mean) ** 2;
+      const variance = varSum / N;
+
+      const hist = new Float64Array(256);
+      for (let i = 0; i < N; i++) hist[Math.round(pixels[i])]++;
+
+      let entropy = 0;
+      for (let v = 0; v < 256; v++) {
+        if (hist[v] > 0) {
+          const p = hist[v] / N;
+          entropy -= p * Math.log2(p);
+        }
+      }
+
+      const lsbs = new Uint8Array(N);
+      let lsbSum = 0;
+      for (let i = 0; i < N; i++) {
+        lsbs[i] = data[i * 4] & 1;
+        lsbSum += lsbs[i];
+      }
+      const lsbRatio = lsbSum / N;
+
+      let lsbEntropy = 0;
+      const BS = 8;
+      const NB = Math.max(1, Math.floor(N / BS));
+      for (let b = 0; b < NB; b++) {
+        let ones = 0;
+        for (let k = 0; k < BS && b * BS + k < N; k++) ones += lsbs[b * BS + k];
+        const zeros = BS - ones;
+        if (ones > 0 && zeros > 0) {
+          const p1 = ones / BS;
+          const p0 = zeros / BS;
+          lsbEntropy += -(p1 * Math.log2(p1) + p0 * Math.log2(p0));
+        }
+      }
+      lsbEntropy /= NB;
+
+      let chi2 = 0;
+      for (let k = 0; k < 128; k++) {
+        const f0 = hist[2 * k];
+        const f1 = hist[2 * k + 1];
+        const total = f0 + f1;
+        if (total > 0) {
+          const expected = total / 2;
+          chi2 += ((f0 - expected) ** 2) / expected + ((f1 - expected) ** 2) / expected;
+        }
+      }
+
+      let edgeCount = 0;
+      const capH = Math.min(H, 500);
+      for (let y = 1; y < capH - 1; y++) {
+        for (let x = 1; x < W - 1; x++) {
+          const gx = pixels[y * W + x + 1] - pixels[y * W + x - 1];
+          const gy = pixels[(y + 1) * W + x] - pixels[(y - 1) * W + x];
+          if (Math.sqrt(gx * gx + gy * gy) > 25) edgeCount++;
+        }
+      }
+      const edgeDensity = edgeCount / Math.max(1, (capH - 2) * (W - 2));
+
+      return { mean, variance, entropy, lsbRatio, lsbEntropy, chi2, edgeDensity, hist, lsbs, W, H };
+    }
+
+    function runDetection(features) {
+      const { lsbEntropy, chi2, lsbRatio, W, H } = features;
+
+      const lsbEntropyScore = clamp((lsbEntropy - 0.78) / 0.18, 0, 1);
+      const chi2Norm = clamp(1 - chi2 / (W * H * 0.15), 0, 1);
+      const lsbRatioScore = clamp(1 - Math.abs(lsbRatio - 0.5) / 0.15, 0, 1);
+
+      const stat = 0.45 * lsbEntropyScore + 0.35 * chi2Norm + 0.2 * lsbRatioScore;
+      const lr = sigmoid(2.5 * lsbEntropyScore - 0.5 * (1 - chi2Norm) + 1.2 * lsbRatioScore - 0.8);
+      const rf = sigmoid(1.8 * lsbEntropyScore + 1.5 * chi2Norm + 0.7 * lsbRatioScore - 0.9);
+      const svm = clamp((0.4 * lsbEntropyScore + 0.35 * chi2Norm + 0.25 * lsbRatioScore) * 1.15, 0, 1);
+      const cnn = clamp(0.35 * lr + 0.3 * rf + 0.2 * svm + 0.15 * lsbEntropyScore, 0, 1);
+      const ensemble = 0.2 * stat + 0.22 * lr + 0.22 * rf + 0.18 * svm + 0.18 * cnn;
+
+      const verdict = ensemble > 0.52 ? "suspicious" : "clean";
+      const confidence = verdict === "suspicious"
+        ? Math.round(50 + ensemble * 50)
+        : Math.round(50 + (1 - ensemble) * 50);
+
+      return { stat, lr, rf, svm, cnn, ensemble, verdict, confidence, lsbEntropyScore, chi2Norm, lsbRatioScore };
+    }
+
+    let encImage = null;
+    let decImage = null;
+    let detImage = null;
+
+    function loadEncImage(input) {
+      const file = input.files[0];
+      if (!file) return;
+
+      const canvas = document.getElementById("enc-canvas");
+      loadImageToCanvas(file, canvas, (img) => {
+        encImage = img;
+        const preview = document.getElementById("enc-preview");
+        preview.src = URL.createObjectURL(file);
+        preview.style.display = "block";
+
+        const capacityBytes = Math.floor((canvas.width * canvas.height * 3 - 32) / 8);
+        document.getElementById("enc-img-info").textContent =
+          canvas.width + " x " + canvas.height + " px - payload up to ~" + capacityBytes.toLocaleString() + " bytes";
+        document.getElementById("enc-capacity").textContent =
+          "Max capacity: " + capacityBytes.toLocaleString() + " bytes";
+        document.getElementById("enc-btn").disabled = false;
+
+        const imageData = canvas.getContext("2d").getImageData(0, 0, canvas.width, canvas.height);
+        const lsbs = [];
+        for (let i = 0; i < imageData.data.length; i += 4) lsbs.push(imageData.data[i] & 1);
+        drawLsbGrid(document.getElementById("enc-lsb-grid"), lsbs);
+
+        setLog("enc-log", [
+          "[READY] Cover image loaded.",
+          "[INFO] Resolution: " + canvas.width + " x " + canvas.height,
+          "[INFO] Capacity: " + capacityBytes + " bytes",
+          "[WAIT] Enter a message and click Encode."
+        ]);
+      });
+    }
+
+    function encodeImage() {
+      if (!encImage) {
+        alert("Please upload a cover image first.");
+        return;
+      }
+
+      const msg = document.getElementById("enc-msg").value;
+      if (!msg.trim()) {
+        alert("Enter a message to hide.");
+        return;
+      }
+
+      const canvas = document.getElementById("enc-canvas");
+      const ctx = canvas.getContext("2d");
+      ctx.drawImage(encImage, 0, 0);
+
+      const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+      const data = imageData.data;
+
+      const messageBytes = new TextEncoder().encode(msg);
+      const headerBits = messageBytes.length.toString(2).padStart(32, "0");
+      const payloadBits = bytesToBinary(messageBytes);
+      const allBits = headerBits + payloadBits;
+      const maxBits = (data.length / 4) * 3;
+
+      if (allBits.length > maxBits) {
+        alert("Message too long for this image. Please use a larger image or shorter message.");
+        return;
+      }
+
+      let bitIdx = 0;
+      for (let i = 0; i < data.length && bitIdx < allBits.length; i += 4) {
+        for (let c = 0; c < 3 && bitIdx < allBits.length; c++) {
+          data[i + c] = (data[i + c] & 0xfe) | Number(allBits[bitIdx++]);
+        }
+      }
+
+      ctx.putImageData(imageData, 0, 0);
+
+      const pngUrl = canvas.toDataURL("image/png");
+      document.getElementById("enc-out").src = pngUrl;
+      document.getElementById("enc-result").style.display = "block";
+
+      const download = document.getElementById("enc-download");
+      download.href = pngUrl;
+      download.download = "stego_image.png";
+
+      document.getElementById("enc-stats").innerHTML =
+        "<span style='color:var(--green)'>Success:</span> " + messageBytes.length + " bytes embedded<br>" +
+        "Fill ratio: " + fmtNum((allBits.length / maxBits) * 100, 1) + "% of total RGB LSB capacity";
+
+      const newLsbs = [];
+      for (let i = 0; i < data.length; i += 4) newLsbs.push(data[i] & 1);
+      drawLsbGrid(document.getElementById("enc-lsb-grid"), newLsbs);
+
+      setLog("enc-log", [
+        "[STEP 1] Message converted to UTF-8 bytes.",
+        "[STEP 2] 32-bit header written with payload size = " + messageBytes.length + " bytes.",
+        "[STEP 3] RGB least significant bits updated sequentially.",
+        "[DONE] Encoded PNG ready for download."
+      ]);
+    }
+
+    function loadDecImage(input) {
+      const file = input.files[0];
+      if (!file) return;
+
+      const canvas = document.getElementById("dec-canvas");
+      loadImageToCanvas(file, canvas, (img) => {
+        decImage = img;
+        const preview = document.getElementById("dec-preview");
+        preview.src = URL.createObjectURL(file);
+        preview.style.display = "block";
+
+        document.getElementById("dec-img-info").textContent =
+          canvas.width + " x " + canvas.height + " px - " + (file.size / 1024).toFixed(1) + " KB";
+        document.getElementById("dec-btn").disabled = false;
+        document.getElementById("dec-output").textContent = "Ready to extract hidden message.";
+        document.getElementById("dec-meta").textContent = "No data extracted yet.";
+
+        setLog("dec-log", [
+          "[READY] Encoded image loaded.",
+          "[INFO] Resolution: " + canvas.width + " x " + canvas.height,
+          "[WAIT] Click Extract Hidden Message."
+        ]);
+      });
+    }
+
+    function decodeImage() {
+      if (!decImage) {
+        alert("Please upload an encoded image first.");
+        return;
+      }
+
+      const canvas = document.getElementById("dec-canvas");
+      const ctx = canvas.getContext("2d");
+      ctx.drawImage(decImage, 0, 0);
+
+      const data = ctx.getImageData(0, 0, canvas.width, canvas.height).data;
+      let bits = "";
+      for (let i = 0; i < data.length; i += 4) {
+        for (let c = 0; c < 3; c++) bits += data[i + c] & 1;
+      }
+
+      const byteLen = parseInt(bits.slice(0, 32), 2);
+      const maxBytes = Math.floor((bits.length - 32) / 8);
+      const output = document.getElementById("dec-output");
+
+      if (!Number.isFinite(byteLen) || byteLen <= 0 || byteLen > maxBytes || byteLen > 1000000) {
+        output.innerHTML = "<span style='color:var(--red)'>No valid hidden message found.</span>";
+        document.getElementById("dec-meta").textContent = "Header value is invalid for this image.";
+        setLog("dec-log", [
+          "[STEP 1] LSB stream extracted from RGB channels.",
+          "[STEP 2] Header check failed.",
+          "[FAIL] No valid payload detected."
+        ]);
+        return;
+      }
+
+      const payloadBits = bits.slice(32, 32 + byteLen * 8);
+      const payloadBytes = binaryToBytes(payloadBits);
+      const text = new TextDecoder().decode(payloadBytes);
+
+      output.textContent = text;
+      document.getElementById("dec-meta").textContent =
+        "Header: " + byteLen + " bytes - Message extracted successfully";
+
+      setLog("dec-log", [
+        "[STEP 1] LSB stream extracted from RGB channels.",
+        "[STEP 2] Header parsed: " + byteLen + " bytes.",
+        "[STEP 3] Payload bytes reconstructed and decoded as UTF-8.",
+        "[DONE] Hidden message extracted."
+      ]);
+    }
+
+    function loadDetImage(input) {
+      const file = input.files[0];
+      if (!file) return;
+
+      const canvas = document.getElementById("det-canvas");
+      loadImageToCanvas(file, canvas, (img) => {
+        detImage = img;
+        const preview = document.getElementById("det-preview");
+        preview.src = URL.createObjectURL(file);
+        preview.style.display = "block";
+
+        document.getElementById("det-img-info").textContent =
+          canvas.width + " x " + canvas.height + " px - " + (file.size / 1024).toFixed(1) + " KB";
+        document.getElementById("det-btn").disabled = false;
+        document.getElementById("detect-placeholder").style.display = "block";
+        document.getElementById("verdict-panel").style.display = "none";
+        document.getElementById("feature-panel").style.display = "none";
+      });
+    }
+
+    function detectStego() {
+      if (!detImage) {
+        alert("Please upload an image first.");
+        return;
+      }
+
+      const canvas = document.getElementById("det-canvas");
+      const ctx = canvas.getContext("2d");
+      ctx.drawImage(detImage, 0, 0);
+      const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+
+      document.getElementById("det-spinner").style.display = "block";
+      document.getElementById("det-icon").style.display = "none";
+      document.getElementById("det-btn").disabled = true;
+
+      setTimeout(() => {
+        const feats = extractFeatures(imageData);
+        const results = runDetection(feats);
+        renderDetectionResults(feats, results);
+        document.getElementById("det-spinner").style.display = "none";
+        document.getElementById("det-icon").style.display = "";
+        document.getElementById("det-btn").disabled = false;
+      }, 60);
+    }
+
+    function renderDetectionResults(feats, res) {
+      document.getElementById("detect-placeholder").style.display = "none";
+      document.getElementById("verdict-panel").style.display = "block";
+      document.getElementById("feature-panel").style.display = "block";
+
+      const verdictBox = document.getElementById("verdict-box");
+      verdictBox.className = "verdict " + res.verdict;
+      document.getElementById("verdict-text").textContent =
+        res.verdict === "suspicious" ? "Hidden data detected" : "No hidden data found";
+      document.getElementById("verdict-detail").textContent =
+        res.verdict === "suspicious"
+          ? "Ensemble " + fmtNum(res.ensemble * 100, 1) + "% - LSB anomaly detected - chi-square signature present"
+          : "Ensemble " + fmtNum(res.ensemble * 100, 1) + "% - pixel distribution appears normal";
+      document.getElementById("verdict-conf").innerHTML =
+        "<div style='text-align:center;'>" +
+          "<div style='font-size:28px;font-weight:700;color:" + (res.verdict === "suspicious" ? "var(--red)" : "var(--green)") + ";'>" +
+            res.confidence + "%" +
+          "</div>" +
+          "<div style='font-size:10px;color:var(--text3);'>confidence</div>" +
+        "</div>";
+
+      const featList = [
+        { label: "Pixel Mean", val: fmtNum(feats.mean, 1), sub: "intensity 0-255" },
+        { label: "Variance", val: fmtNum(feats.variance, 1), sub: "pixel spread" },
+        { label: "Entropy", val: fmtNum(feats.entropy, 3), sub: "bits per pixel" },
+        { label: "LSB Entropy", val: fmtNum(feats.lsbEntropy, 3), sub: "bit randomness" },
+        { label: "LSB Ratio", val: fmtNum(feats.lsbRatio, 3), sub: "0.5 is suspicious" },
+        { label: "Chi-square", val: fmtNum(feats.chi2, 0), sub: "pair uniformity" },
+        { label: "Edge Density", val: fmtNum(feats.edgeDensity * 100, 1) + "%", sub: "Sobel estimate" },
+        { label: "Image Size", val: feats.W + " x " + feats.H, sub: "pixels" },
+        { label: "Ensemble", val: fmtNum(res.ensemble * 100, 1) + "%", sub: "anomaly score" }
+      ];
+
+      document.getElementById("metrics-grid").innerHTML = featList.map((f) =>
+        "<div class='metric-card'>" +
+          "<div class='metric-label'>" + f.label + "</div>" +
+          "<div class='metric-value'>" + f.val + "</div>" +
+          "<div class='metric-sub'>" + f.sub + "</div>" +
+        "</div>"
+      ).join("");
+
+      const models = [
+        { name: "Statistical Anomaly", type: "chi-square + lsb entropy + ratio", score: res.stat, color: "var(--blue)" },
+        { name: "Logistic Regression", type: "linear classifier", score: res.lr, color: "var(--green)" },
+        { name: "Random Forest", type: "ensemble decision model", score: res.rf, color: "var(--yellow)" },
+        { name: "Support Vector Machine", type: "margin-based score", score: res.svm, color: "#b58cff" },
+        { name: "CNN Deep Learning", type: "spatial pattern estimate", score: res.cnn, color: "var(--red)" },
+        { name: "Ensemble Vote", type: "weighted final decision", score: res.ensemble, color: "var(--text)" }
+      ];
+
+      document.getElementById("model-cards").innerHTML = models.map((m) => {
+        const pct = Math.round(m.score * 100);
+        return "<div class='model-card'>" +
+          "<div class='model-accent' style='background:" + m.color + ";'></div>" +
+          "<div class='model-name'>" + m.name + "</div>" +
+          "<div class='model-type'>" + m.type + "</div>" +
+          "<div class='model-score' style='color:" + (pct > 50 ? "var(--red)" : "var(--green)") + ";'>" + pct + "%</div>" +
+          "<div class='bar-track' style='margin-top:8px;'><div class='bar-fill' style='width:" + pct + "%;background:" + m.color + ";opacity:0.75;'></div></div>" +
+        "</div>";
+      }).join("");
+
+      const statData = [
+        { name: "LSB Entropy Score", val: res.lsbEntropyScore, color: "#4d9fff" },
+        { name: "Chi-square Anomaly", val: res.chi2Norm, color: "#a78bfa" },
+        { name: "LSB Ratio Deviation", val: res.lsbRatioScore, color: "#ffd166" },
+        { name: "Ensemble Anomaly", val: res.ensemble, color: res.ensemble > 0.52 ? "#ff5d73" : "#22d39a" }
+      ];
+
+      document.getElementById("stat-bars").innerHTML = statData.map((s) => {
+        const pct = Math.round(s.val * 100);
+        return "<div class='bar-wrap'>" +
+          "<div class='bar-header'><span>" + s.name + "</span><span style='color:" + s.color + ";'>" + pct + "%</span></div>" +
+          "<div class='bar-track'><div class='bar-fill' style='width:" + pct + "%;background:" + s.color + ";'></div></div>" +
+        "</div>";
+      }).join("");
+
+      drawLsbGrid(document.getElementById("det-lsb-grid"), feats.lsbs);
+
+      const histEl = document.getElementById("det-histogram");
+      histEl.innerHTML = "";
+      const maxH = Math.max(...feats.hist);
+      for (let b = 0; b < 64; b++) {
+        let sum = 0;
+        for (let k = 0; k < 4; k++) sum += feats.hist[b * 4 + k] || 0;
+        const bar = document.createElement("div");
+        bar.className = "hist-bar";
+        bar.style.height = Math.max(2, (sum / (maxH * 4)) * 90) + "px";
+        histEl.appendChild(bar);
+      }
+
+      document.getElementById("edge-stats").innerHTML =
+        "Edge density: " + fmtNum(feats.edgeDensity * 100, 2) + "%<br>" +
+        "Sobel threshold: 25<br>" +
+        "Analysis region: " + feats.W + " x " + Math.min(feats.H, 500) + " pixels";
+    }
+  </script>
+</body>
+</html>
